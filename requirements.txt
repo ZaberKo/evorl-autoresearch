@@ -1,0 +1,12 @@
+# Python >= 3.12. Install CUDA 12 JAX before installing EvoRL from source.
+jax[cuda12]==0.10.0
+jaxlib==0.10.0
+jax-cuda12-plugin[with-cuda]==0.10.0
+jax-cuda12-pjrt==0.10.0
+
+# Aim depends on botocore, which requires python-dateutil below 3.
+python-dateutil>=2.9,<3
+
+# Editable source checkout: https://github.com/EMI-Group/evorl.git
+# Source revision at setup: 07c271159a533ab9ca9e0cf89dc7019391264734
+-e ./evorl
