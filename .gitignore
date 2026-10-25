@@ -238,20 +238,17 @@ __marimo__/
 # Built Visual Studio Code Extensions
 *.vsix
 
-# Local editable EvoRL source checkout; installed through requirements.txt.
-/evorl/
-
 # Hydra runs, experiment tracking, and generated checkpoints.
-/outputs/
-/multirun/
-/debug/
-/aim/
-/.aim/
-/wandb/
-/swanlog/
-/comet-data/
-/.neptune/
-/checkpoints/
+# /outputs/
+# /multirun/
+# /debug/
+# /aim/
+# /.aim/
+# /wandb/
+# /swanlog/
+# /comet-data/
+# /.neptune/
+# /checkpoints/
 
 # Local credentials and operating-system metadata.
 .env.*

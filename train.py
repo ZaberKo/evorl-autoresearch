@@ -6,6 +6,7 @@ from contextlib import nullcontext
 
 import hydra
 from hydra.core.hydra_config import HydraConfig
+from hydra.types import RunMode
 from omegaconf import DictConfig, OmegaConf
 
 from accelerator_utils import gpu_visibility_settings
@@ -21,7 +22,7 @@ set_omegaconf_resolvers()
 def set_gpu_id() -> None:
     """Select one GPU before importing JAX, including for a single Hydra run."""
     hydra_config = HydraConfig.get()
-    job_id = hydra_config.job.num if hydra_config.mode == hydra.types.RunMode.MULTIRUN else 0
+    job_id = hydra_config.job.num if hydra_config.mode == RunMode.MULTIRUN else 0
     settings, device, num_gpus = gpu_visibility_settings(job_id)
     if job_id >= num_gpus:
         logger.warning("Multiple jobs are sharing a GPU.")
@@ -38,7 +39,7 @@ def set_gpu_id() -> None:
 def train(config: DictConfig) -> None:
     """Build and run the directly imported local OpenES workflow."""
     if config.get("workflow_cls") != "openes.OpenESWorkflow":
-        raise ValueError("Select an OpenES config with agent=ec/openes.")
+        raise ValueError("Select the OpenES experiment with agent=openes.")
     if config.get("env") is None:
         raise ValueError("Select an environment, for example env=brax/ant.")
 

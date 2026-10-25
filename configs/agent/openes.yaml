@@ -1,0 +1,38 @@
+# @package _global_
+# Standalone experiment based on EvoRL agent/exp/ec/openes/brax-256net.yaml.
+
+workflow_cls: openes.OpenESWorkflow
+num_iters: 2000
+
+normalize_obs: true
+random_timesteps: 10000
+
+pop_size: 128
+optimizer_name: "adam"
+weight_decay: 0.005
+ec_noise_std:
+  init: 0.02
+  final: 0.001
+  decay: 1.0
+ec_lr:
+  init: 0.01
+  final: 0.001
+  decay: 1.0
+
+num_envs: 16
+episodes_for_fitness: 16
+mirror_sampling: true
+explore: false
+discount: 1.0
+
+num_eval_envs: 128
+eval_episodes: 128
+eval_interval: 10
+
+agent_network:
+  actor_hidden_layer_sizes: [256, 256]
+  use_bias: true
+  norm_layer_type: "none"
+  policy_obs_key: ""
+
+tags: ["256net"]
