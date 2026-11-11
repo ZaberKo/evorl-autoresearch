@@ -1,4 +1,8 @@
-# Python >= 3.12. Install CUDA 12 JAX before installing EvoRL from source.
+# Rebuild with: uv venv --python 3.12 .venv
+# Install with: uv pip install --python .venv/bin/python -r requirements.txt
 jax[cuda12]==0.11.2
+hydra-core==1.3.2
+omegaconf==2.3.0
+aim==3.29.1
 
--e ../evorl[wandb]
+-e /home/zaber/workspace/evorl

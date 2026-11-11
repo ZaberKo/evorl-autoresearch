@@ -1,21 +1,19 @@
-from evorl.utils import running_statistics
-from flax import nnx
-from omegaconf import DictConfig
 from typing import Self
 
 import jax
-
-from evorl.types import State, Params
+from evorl.agent import AgentState
+from evorl.algorithms.ec.ec_agent import DeterministicECAgent
+from evorl.algorithms.ec.obs_utils import init_obs_preprocessor
+from evorl.algorithms.ec.so.es_workflow import ESWorkflowTemplate
+from evorl.ec.optimizers import ECState, ExponentialScheduleSpec
 from evorl.envs import AutoresetMode, create_env
 from evorl.evaluators import Evaluator
-from evorl.agent import AgentState
-from evorl.ec.optimizers import ExponentialScheduleSpec, ECState
+from evorl.types import Params, State
+from evorl.utils import running_statistics
+from flax import nnx
+from omegaconf import DictConfig
+
 from openes_optimizer import OpenES
-
-
-from evorl.algorithms.ec.so.es_workflow import ESWorkflowTemplate
-from evorl.algorithms.ec.obs_utils import init_obs_preprocessor
-from evorl.algorithms.ec.ec_agent import DeterministicECAgent
 
 
 class OpenESWorkflow(ESWorkflowTemplate):
@@ -25,6 +23,24 @@ class OpenESWorkflow(ESWorkflowTemplate):
 
     @classmethod
     def _build_from_config(cls, config: DictConfig) -> Self:
+        # Evaluator runs full batches; require exact budgets before creating envs.
+        for episode_field, env_field in (
+            ("episodes_for_fitness", "num_envs"),
+            ("eval_episodes", "num_eval_envs"),
+        ):
+            episodes, envs = config[episode_field], config[env_field]
+            assert isinstance(envs, int) and not isinstance(envs, bool) and envs > 0, (
+                f"{env_field} must be a positive integer"
+            )
+            assert (
+                isinstance(episodes, int)
+                and not isinstance(episodes, bool)
+                and episodes > 0
+            ), f"{episode_field} must be a positive integer"
+            assert episodes % envs == 0, (
+                f"{episode_field} ({episodes}) must be divisible by {env_field} ({envs})"
+            )
+
         env = create_env(
             config.env,
             parallel=config.num_envs,

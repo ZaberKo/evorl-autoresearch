@@ -1,4 +1,4 @@
-"""Train the local OpenES implementation with Hydra and one GPU per job."""
+"""Train local OpenES or its Pop-OpenES baseline with one GPU per job."""
 
 import logging
 import os
@@ -21,6 +21,8 @@ set_omegaconf_resolvers()
 
 def set_gpu_id() -> None:
     """Select one GPU before importing JAX, including for a single Hydra run."""
+    # Allocate on demand on shared GPUs unless the user explicitly opts in.
+    os.environ.setdefault("XLA_PYTHON_CLIENT_PREALLOCATE", "false")
     hydra_config = HydraConfig.get()
     job_id = hydra_config.job.num if hydra_config.mode == RunMode.MULTIRUN else 0
     settings, device, num_gpus = gpu_visibility_settings(job_id)
@@ -37,16 +39,24 @@ def set_gpu_id() -> None:
 
 @hydra.main(version_base=None, config_path="configs", config_name="config")
 def train(config: DictConfig) -> None:
-    """Build and run the directly imported local OpenES workflow."""
-    if config.get("workflow_cls") != "openes.OpenESWorkflow":
-        raise ValueError("Select the OpenES experiment with agent=openes.")
+    """Build and run a local OpenES experiment."""
+    workflow_classes = {
+        "openes.OpenESWorkflow",
+        "pop_openes.PopOpenESWorkflow",
+    }
+    if config.get("workflow_cls") not in workflow_classes:
+        raise ValueError("Select agent=openes or agent=meta/pop-openes.")
     if config.get("env") is None:
         raise ValueError("Select an environment, for example env=brax/ant.")
 
     set_gpu_id()
 
     import jax
-    from openes import OpenESWorkflow
+
+    if config.workflow_cls == "pop_openes.PopOpenESWorkflow":
+        from pop_openes import PopOpenESWorkflow as workflow_cls
+    else:
+        from openes import OpenESWorkflow as workflow_cls
 
     config.output_dir = str(get_output_dir())
     logger.info("config:\n%s", OmegaConf.to_yaml(config, resolve=True))
@@ -55,7 +65,7 @@ def train(config: DictConfig) -> None:
     if len(devices) != 1:
         raise ValueError(f"Each training job requires one GPU; found {devices}.")
 
-    workflow = OpenESWorkflow.build_from_config(config, jit=config.jit)
+    workflow = workflow_cls.build_from_config(config, jit=config.jit)
     try:
         workflow.add_recorders(setup_recorders(config, workflow.name(), parallel=True))
         context = (

@@ -1,0 +1,38 @@
+# @package _global_
+# Same OpenES hyperparameters for all outer population members.
+
+defaults:
+  - /agent@target_workflow: openes
+  - _self_
+
+workflow_cls: pop_openes.PopOpenESWorkflow
+num_instances: 16 # Number of independent OpenES instances.
+
+# The outer loop controls training and evaluation; the inner learn() is unused.
+# One iteration is one OpenES update for every instance.
+num_iters: 2000
+eval_interval: 50
+
+# Independent of evaluation; save every 100 updates and at the end.
+checkpoint:
+  enable: true
+  save_interval_steps: 100
+
+target_workflow:
+  pop_size: 128
+  # GPU memory / batching (applies to all four settings below):
+  # Fitness batches: episodes_for_fitness = k * num_envs.
+  # Center-policy evaluation batches: eval_episodes = k * num_eval_envs.
+  # For integer k >= 1, each evaluation runs k sequential batches. Keep the episode
+  # count fixed and lower the corresponding environment count to reduce parallel
+  # GPU memory use, potentially at the cost of speed. Changing the episode count
+  # also changes the sampling budget. Episode counts must be exact multiples of
+  # environment counts; construction asserts this before creating environments.
+  # Examples: fitness 4 envs / 16 episodes; center eval 32 envs / 128 episodes.
+  # Both examples run 4 sequential batches.
+  num_envs: 1
+  episodes_for_fitness: 1
+  num_eval_envs: 128
+  eval_episodes: 128
+
+tags: ["pop", "256net"]
