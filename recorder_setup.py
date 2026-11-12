@@ -12,9 +12,11 @@ def setup_recorders(
     workflow_name: str,
     *,
     parallel: bool = False,
+    console: bool = True,
     recorder_kwargs: Mapping[str, Mapping[str, Any]] | None = None,
 ):
-    """Build recorders for train.py or train_dist.py (parallel=True).
+    """Build recorders for train.py, train_dist.py (parallel=True) or the
+    fixed research training script (parallel=True, console=False).
 
     Grouping is a script convention: ordinary runs use "dev", while parallel
     training runs use their experiment name. Backend options can override it.
@@ -24,10 +26,12 @@ def setup_recorders(
     from evorl.recorders import (
         AimRecorder,
         CometRecorder,
+        JSONLRecorder,
         LogRecorder,
         NeptuneRecorder,
         SwanlabRecorder,
         WandbRecorder,
+        sanitize_filename,
     )
 
     output_dir = Path(config.output_dir)
@@ -41,6 +45,7 @@ def setup_recorders(
     config_data = OmegaConf.to_container(config, resolve=True)
     backend_options = recorder_kwargs or {}
     recorder_types = {
+        "jsonl": JSONLRecorder,
         "wandb": WandbRecorder,
         "aim": AimRecorder,
         "swanlab": SwanlabRecorder,
@@ -50,7 +55,7 @@ def setup_recorders(
     unknown_options = set(backend_options) - recorder_types.keys()
     if unknown_options:
         raise ValueError(
-            "recorder_kwargs only accepts tracking backends; unknown keys: "
+            "recorder_kwargs only accepts non-log recorders; unknown keys: "
             + ", ".join(sorted(unknown_options))
         )
 
@@ -58,7 +63,10 @@ def setup_recorders(
     for rec in config.recorders:
         if rec == "log":
             recorders.append(
-                LogRecorder(log_path=output_dir / f"{exp_name}.log", console=True)
+                LogRecorder(
+                    log_path=output_dir / f"{sanitize_filename(exp_name)}.log",
+                    console=console,
+                )
             )
         elif rec in recorder_types:
             kwargs = {
